@@ -1,0 +1,14 @@
+.score{
+	font-size:14pt;	
+}
+.score.first{
+	font-size:18pt;
+}
+.navbar{
+	box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+}
+.ratingscounter{
+	font-size:10pt;
+	color:#1d2124;
+	display:block;
+}
