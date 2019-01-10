@@ -170,6 +170,8 @@ public class RecommendationLogic {
 			if(weightedMovies.get(unwatchedMovieID) != null) {
 				double recommendationScore = weightedMovies.get(unwatchedMovieID) / totalSimilarityScoreForMovie;
 				DecimalFormat df = new DecimalFormat("#.####");
+				//TODO: It's not good to change the movie objects attributes, since this is the same movie object for the whole plattform.
+				//		Should make a copy the movie that can be changed for the result list instead of using the same object.... mutable/immutable...
 				movie.setRecommendationScore(new Double(df.format(recommendationScore)));
 				movieRec.add(movie);
 			}

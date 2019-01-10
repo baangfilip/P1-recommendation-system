@@ -22,8 +22,8 @@ import spark.servlet.SparkApplication;
 //Start Application by web.xml
 public class Application implements SparkApplication {
 	//putting some logic here since it will be so much overhead to put it somewhere else
-	private static final HashMap<Integer, UserEntity> users = new HashMap<>();
-	private static final HashMap<Integer, MovieEntity> movies = new HashMap<>();
+	private static final HashMap<Integer, UserEntity> users = new HashMap<>(); //TODO: make this read only for real
+	private static final HashMap<Integer, MovieEntity> movies = new HashMap<>(); //TODO: make this read only for real
 	
 	//CSV-location when running from Servlet
 	private String ratingsCSV = "webapps/rec/WEB-INF/classes/data/MovieLens_100k/ratings.csv"; //This will not work for any name for the webapp: https://github.com/perwendel/spark/pull/658/files
