@@ -1,14 +1,14 @@
 package se.kb222vt.entities;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
 public class RecommendationEntity {
 	private UserEntity recommendationFor; //recommendation for this user
 	private SortedMap<Double, UserEntity> similarUsers = new TreeMap<>(); //similarScore, User, sorted descending
-	private SortedMap<Double, MovieEntity> recommendedMovies = new TreeMap<>();
+	private List<MovieEntity> recommendedMovies = new ArrayList<>();
 	
 	public RecommendationEntity(UserEntity user) {
 		this.recommendationFor = user;
@@ -22,11 +22,11 @@ public class RecommendationEntity {
 		this.similarUsers = similarUsers;
 	}
 
-	public SortedMap<Double, MovieEntity> getRecommendedMovies() {
+	public List<MovieEntity> getRecommendedMovies() {
 		return recommendedMovies;
 	}
 
-	public void setRecommendedMovies(SortedMap<Double, MovieEntity> recommendedMovies) {
+	public void setRecommendedMovies(List<MovieEntity> recommendedMovies) {
 		this.recommendedMovies = recommendedMovies;
 	}
 

@@ -1,6 +1,8 @@
 package se.kb222vt.logic;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.SortedMap;
@@ -21,17 +23,21 @@ public class RecommendationLogic {
 	 * @return RecommendationEntity
 	 * @throws Exception 
 	 */
-	public RecommendationEntity userRec(UserEntity user, String measure, int minRatings) throws Exception {
+	public RecommendationEntity userRec(UserEntity user, String measure, int minRatings, int maxResults) throws Exception {
 		
 		SortedMap<Double, UserEntity> similarUsers = findSimilarUsers(user, measure);
 		//got similar persons and their similarity
-		SortedMap<Double, MovieEntity> movieRec = getWeightedScoresForUnwatchedMovies(similarUsers, getUnwatchedMovies(user), minRatings);
+		ArrayList<MovieEntity> movieRec = getWeightedScoresForUnwatchedMovies(similarUsers, getUnwatchedMovies(user), minRatings);
 		RecommendationEntity rec = new RecommendationEntity(user);
-		rec.setRecommendedMovies(movieRec);
+		
+		//sort movie recommendations
+		movieRec.sort(MovieEntity.getMovieByRecommendationScore());
+		int maxResult = movieRec.size() > maxResults ? maxResults : movieRec.size();
+		rec.setRecommendedMovies(movieRec.subList(0, maxResult));
 		rec.setSimilarUsers(similarUsers);
 		return rec;
 	}
-	
+		
 	/**
 	 * Compare two users and the ratings the gave movies that they both watched with pearson correlation
 	 * @param user
@@ -131,16 +137,15 @@ public class RecommendationLogic {
 	 * @param unwatchedMovies
 	 * @return a sortedMap<"RecommendationScore", MovieEntity> with the highest recommended movie first
 	 */
-	private SortedMap<Double, MovieEntity> getWeightedScoresForUnwatchedMovies(SortedMap<Double, UserEntity> similarUsers, ArrayList<MovieEntity> unwatchedMovies, int minRatings) {
+	private ArrayList<MovieEntity> getWeightedScoresForUnwatchedMovies(SortedMap<Double, UserEntity> similarUsers, ArrayList<MovieEntity> unwatchedMovies, int minRatings) {
 		HashMap<Integer, Double> weightedMovies = new HashMap<Integer, Double>();
-		SortedMap<Double, MovieEntity> movieRec = new TreeMap<Double, MovieEntity>().descendingMap();
-		System.out.println("SimilarUsers: " + similarUsers.size());
-		System.out.println("UnwatchedMovies: " + unwatchedMovies.size());
+		ArrayList<MovieEntity> movieRec = new ArrayList<MovieEntity>();
+		//System.out.println("SimilarUsers: " + similarUsers.size());
+		//System.out.println("UnwatchedMovies: " + unwatchedMovies.size());
 		
 		for(MovieEntity movie : unwatchedMovies) {
-			System.out.println("minRatings: " + minRatings);
 			if(movie.getNbrOfRatings() < minRatings) {
-				System.out.println("This movie doesnt have enough ratings to be included in result");
+				//System.out.println("This movie doesnt have enough ratings to be included in result");
 				continue;
 			}
 			double totalSimilarityScoreForMovie = 0;
@@ -164,7 +169,9 @@ public class RecommendationLogic {
 			//now we have the sum weightedScores for every movie we could calculate it on, lets divide it by the sum of similarity score
 			if(weightedMovies.get(unwatchedMovieID) != null) {
 				double recommendationScore = weightedMovies.get(unwatchedMovieID) / totalSimilarityScoreForMovie;
-				movieRec.put(recommendationScore, movie);
+				DecimalFormat df = new DecimalFormat("#.####");
+				movie.setRecommendationScore(new Double(df.format(recommendationScore)));
+				movieRec.add(movie);
 			}
 		}
 		
@@ -180,14 +187,14 @@ public class RecommendationLogic {
 	private ArrayList<MovieEntity> getUnwatchedMovies(UserEntity user) {
 		ArrayList<MovieEntity> unwatchedMovies = new ArrayList<>();
 		for(MovieEntity movie : Application.getMovies().values()) {
+			movie.setRecommendationScore(0);
 			if(user.getRatedMovies().containsKey(movie.getMovieID())) {
 				continue; //user have already watched this movie
 			}else {
 				unwatchedMovies.add(movie);
 			}
 		}
-		System.out.println("User: " + user.getUserName() + " has " + unwatchedMovies.size() + " unwatched movies");
+		//System.out.println("User: " + user.getUserName() + " has " + unwatchedMovies.size() + " unwatched movies");
 		return unwatchedMovies;
-	}
-	
+	}	
 }

@@ -38,17 +38,29 @@ function formToJson(form){
 }
 
 function getRec(form){
-	$.getJSON(`API/rec/user/${form.similarityMeasure}/${form.userID}?minRatings=${form.minRatings}`, function(data) {
+	$.getJSON(`API/rec/user/${form.similarityMeasure}/${form.userID}?minRatings=${form.minRatings}&maxResults=${form.maxResults}`, function(data) {
 		let movies = [];
-		$.each(data.recommendedMovies, function(score, movie) {
-			score = parseFloat(score).toFixed(2);
-			var nbrOfRatings = Object.values(movie.userRatings).length;
-			if(movies.length == 0)
-				movies.push(`<li class="list-group-item"><span class="score first">${score}</span> ${movie.title} <span class="badge badge-pill badge-success">Best match!</span>
-				<span class="ratingscounter">ratings: ${nbrOfRatings}</span></li>`);
-			else
-				movies.push(`<li class="list-group-item"><span class="score">${score}</span> ${movie.title}
-				<span class="ratingscounter">ratings: ${nbrOfRatings}</span></li>`);
+		$.each(data.recommendedMovies, function(index, movie) {
+			score = movie.recommendationScore;
+			
+			if(movies.length == 0){ //<span class="badge badge-pill badge-success">Best match!</span>
+				firstClass = "first";
+				color = "success"
+			}else{
+				firstClass = "";
+				color = "primary";
+			}
+			movies.push(`<li class="list-group-item">
+				<div class="row">
+					<div class="recommendation-con col-sm-3">
+						<span title="Recommendation score" class="badge badge-pill badge-${color} score ${firstClass}">${score}</span> 
+					</div>
+					<div class="movie-con col-sm-9">
+						<span class="title">${movie.title}</span> 
+						${getStarsForRating(movie.userRatings)}
+					</div>
+				</div>
+			</li>`);
 				
 		});
 		if(movies.length){
@@ -57,18 +69,41 @@ function getRec(form){
 			//no recommended movies
 			$("#movie-results ol").html(`<small class="text-muted">Couldnt find any recommendations, this can be because you have watched all movies already or doesnt have any similar users</small>`);
 		}
-
-		let users = [];
-		$.each(data.similarUsers, function(score, user) {
-			score = parseFloat(score).toFixed(2);
-			users.push(`<li class="list-group-item"><span class="score">${score}</span> ${user.userName}</li>`);
-		});
-
-		if(users.length){
-			$("#user-results ol").html(users.join(""));
+		if(form.showUserSimilaritys){
+			let users = [];
+			$.each(data.similarUsers, function(score, user) {
+				score = parseFloat(score).toFixed(2);
+				users.push(`<li class="list-group-item"><span class="score">${score}</span> ${user.userName}</li>`);
+			});
+	
+			if(users.length){
+				$("#user-results ol").html(users.join(""));
+			}else{
+				//no recommended users
+				$("#user-results ol").html(`<div class="alert alert-secondary" role="alert">Start rating movies so we can find similar users</div>`);
+			}
 		}else{
-			//no recommended users
-			$("#user-results ol").html(`<div class="alert alert-secondary" role="alert">Start rating movies so we can find similar users</div>`);
+			$("#user-results ol").html("Option to show similar users arent checked");
 		}
 	});
+}
+
+function getStarsForRating(ratings){
+	let nbrOfRatings = Object.values(ratings).length;
+	var movieRating = Object.values(ratings).reduce((acc, curr) => acc + curr)  / nbrOfRatings;
+	let score = movieRating.toFixed(0);
+	let ratingCon = $("<div>", {
+		'class': "rating-container",
+		title: `This movie has the rating ${movieRating.toFixed(2)} based on ${nbrOfRatings} users ratings` 
+	});
+	for(i = 0; i < 5; i++){
+		if(score > 0){
+			ratingCon.append(`<i class="fas fa-star"></i>`);
+			score--;
+		}else{
+			ratingCon.append(`<i class="far fa-star"></i>`);
+		}
+	}
+	ratingCon.append(` ${nbrOfRatings} ratings`);
+	return $("<div>").append(ratingCon).html();
 }

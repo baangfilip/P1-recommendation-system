@@ -23,6 +23,10 @@ public class RecommendationController {
     	int minRatings = 0;
     	if(request.queryParams("minRatings") != null)
     		minRatings = Integer.parseInt(request.queryParams("minRatings"));
+
+    	int maxResults = 0;
+    	if(request.queryParams("maxResults") != null)
+    		maxResults = Integer.parseInt(request.queryParams("maxResults"));
     	
     	if(!supportedRecommendations.contains(measure)) {
 			throw new IllegalArgumentException("Measure: " + measure + " is not a supported similarity measure, valid similarity measures are: " + supportedRecommendations.toString());
@@ -31,6 +35,6 @@ public class RecommendationController {
 		if(user == null) {
 			throw new IllegalArgumentException("No user found for ID: " + userID);
 		}
-    	return gson.toJson(logic.userRec(user, measure, minRatings));
+    	return gson.toJson(logic.userRec(user, measure, minRatings, maxResults));
     };      
 }

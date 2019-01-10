@@ -45,24 +45,8 @@ public class Application implements SparkApplication {
         	return gson.toJson(movies);
         });
         
-        //
-        // Use the same Recommendation System you developed for Assignment 1 with the MovieLens dataset
-        //
-        // Grade E:
-        // 1. Läsa in de nya filerna
-        // 2. ratings.csv + movies.csv
-        // 3. Add code for storing the number of ratings each movie has
-        // TODO: 4. Modify the score calculation to exclude movies with few ratings
-        // TODO: 5. It shall be possible to set the min number of ratings in the client GUI
         /*
-			Grade C-D
-			If you set min number of ratings to 1 you will get lots of results with max rating of 5
-			To improve the results you shall:
-			 1) round the score to 4 decimals
-			 2) sort the result list by score (highest first)
-			 3) if two results have equal score, sort by number of ratings (highest first)
-			You must show number of ratings for each movie in the result list in your client GUI
-        
+            TODO:
         	Grade A-B
         	Measure the time it takes to find top 5 recommended movies for a user (try for example user 256)
 			Build a cache for similarity calculations to avoid calculating similarity between two users more than once
