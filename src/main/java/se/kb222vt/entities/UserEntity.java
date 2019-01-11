@@ -85,4 +85,12 @@ public class UserEntity {
 		}
 	}
 	
+	/**
+	 * Clear the cache for this user
+	 * @return
+	 */
+	public void clearCache() {
+		this.similarityUserCache = new HashMap<>();
+	}
+	
 }

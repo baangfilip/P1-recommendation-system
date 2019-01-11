@@ -17,6 +17,7 @@ import com.google.gson.Gson;
 import se.kb222vt.endpoint.RecommendationController;
 import se.kb222vt.entities.MovieEntity;
 import se.kb222vt.entities.UserEntity;
+import se.kb222vt.logic.CacheBenchmark;
 import spark.servlet.SparkApplication;
 
 //Start Application by web.xml
@@ -62,6 +63,14 @@ public class Application implements SparkApplication {
 		} catch (IOException e) {
 			System.out.println("Couldnt read users or movies: " + e.getMessage());
 			e.printStackTrace();
+		}
+        
+        CacheBenchmark cbr = new CacheBenchmark();
+        try {
+			cbr.benchmark();
+		} catch (Exception e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
 		}
 	}
 	
