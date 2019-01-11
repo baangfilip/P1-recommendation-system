@@ -25,7 +25,13 @@ public class RecommendationLogic {
 	 */
 	public RecommendationEntity userRec(UserEntity user, String measure, int minRatings, int maxResults) throws Exception {
 		
+		
+		long startTime = System.currentTimeMillis();//for metadata
+		int cacheSizeBefore = user.getCacheSize(measure);//for metadata
+		
 		SortedMap<Double, UserEntity> similarUsers = findSimilarUsers(user, measure);
+		long similarityTime = (System.currentTimeMillis() - startTime);//for metadata
+		
 		//got similar persons and their similarity
 		ArrayList<MovieEntity> movieRec = getWeightedScoresForUnwatchedMovies(similarUsers, getUnwatchedMovies(user), minRatings);
 		RecommendationEntity rec = new RecommendationEntity(user);
@@ -35,6 +41,10 @@ public class RecommendationLogic {
 		int maxResult = movieRec.size() > maxResults ? maxResults : movieRec.size();
 		rec.setRecommendedMovies(movieRec.subList(0, maxResult));
 		rec.setSimilarUsers(similarUsers);
+		long recommendationTime = (System.currentTimeMillis() - startTime);//for metadata
+		rec.addMetaData("Cached user similarities before starting for this measure", new Integer(cacheSizeBefore));
+		rec.addMetaData("Similarity time (ms)", new Long(similarityTime));
+		rec.addMetaData("Recommendation time (ms)", new Long(recommendationTime));
 		return rec;
 	}
 		
@@ -84,18 +94,25 @@ public class RecommendationLogic {
 			if(u.equals(user))
 				continue;
 			measure = measure.toLowerCase();
-			double similarity = 0;
-			switch(measure) {
-				case "euclidean":
-					similarity = euclideanDistanceUsers(user, u);
-					break;
-				case "pearson":
-					similarity = pearsonCorrelationUsers(user, u);
-					break;
-				default: 
-					throw new Exception("Measure is not supported");
-					
+			double similarity = user.getSimilarityFromCache(u.getUserID(), measure);
+			//check and see if the users similarity for this measure is in cache
+			if(similarity == -1) {
+				//similarity not found in cache, 1. find 2. add to cache
+				switch(measure) {
+					case "euclidean":
+						similarity = euclideanDistanceUsers(user, u);
+						break;
+					case "pearson":
+						similarity = pearsonCorrelationUsers(user, u);
+						break;
+					default: 
+						throw new Exception("Measure is not supported");
+						
+				}
+				//add similarity to cache for both users..
+				cacheSimilarity(measure, similarity, u, user);
 			}
+
 			//System.out.println(user.getUserName() + " is " + similarity + "s to: " + u.getUserName());
 			if(similarity > 0) {
 				similarUsers.put(similarity, u);
@@ -199,4 +216,10 @@ public class RecommendationLogic {
 		//System.out.println("User: " + user.getUserName() + " has " + unwatchedMovies.size() + " unwatched movies");
 		return unwatchedMovies;
 	}	
+	
+	
+	private void cacheSimilarity(String measure, double similarity, UserEntity u1, UserEntity u2) {
+		u1.addSimilarityToCache(measure, similarity, u2.getUserID());
+		u2.addSimilarityToCache(measure, similarity, u1.getUserID());
+	}
 }

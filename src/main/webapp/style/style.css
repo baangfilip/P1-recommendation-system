@@ -22,3 +22,13 @@
 .recommendation-con.col-sm-3 {
     padding-top: 6px;
 }
+
+#metadata table{
+	width: 100%;
+	font-size:10pt;
+	color:#454545;
+}
+#metadata table td{
+	border: 1px solid #eee;
+	padding: 4px 10px 4px 10px;
+}

@@ -40,6 +40,7 @@ function formToJson(form){
 function getRec(form){
 	$.getJSON(`API/rec/user/${form.similarityMeasure}/${form.userID}?minRatings=${form.minRatings}&maxResults=${form.maxResults}`, function(data) {
 		let movies = [];
+		renderMetadata(data.metadata);
 		$.each(data.recommendedMovies, function(index, movie) {
 			score = movie.recommendationScore;
 			
@@ -107,3 +108,23 @@ function getStarsForRating(ratings){
 	ratingCon.append(` ${nbrOfRatings} ratings`);
 	return $("<div>").append(ratingCon).html();
 }
+
+function renderMetadata(metadata){
+	$("#metadata").html("");
+	var $table = $("<table>");
+	$.each(metadata, function(description, data){
+		$table.append(`<tr><td>${description}</td><td>${data}</td></tr>`);
+	});
+	$("#metadata").append($table);
+}
+
+
+
+
+
+
+
+
+
+
+

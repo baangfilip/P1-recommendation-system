@@ -1,6 +1,7 @@
 package se.kb222vt.entities;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -9,6 +10,7 @@ public class RecommendationEntity {
 	private UserEntity recommendationFor; //recommendation for this user
 	private SortedMap<Double, UserEntity> similarUsers = new TreeMap<>(); //similarScore, User, sorted descending
 	private List<MovieEntity> recommendedMovies = new ArrayList<>();
+	
 	
 	public RecommendationEntity(UserEntity user) {
 		this.recommendationFor = user;
@@ -32,6 +34,11 @@ public class RecommendationEntity {
 
 	public UserEntity getRecommendationFor() {
 		return recommendationFor;
+	}
+
+	private HashMap<String, Object> metadata = new HashMap<>();
+	public void addMetaData(String metadataName, Object data) {
+		metadata.put(metadataName, data);
 	}
 	
 }
