@@ -16,49 +16,111 @@ public class CacheBenchmark {
 
 	private RecommendationLogic recLogic = new RecommendationLogic();
 	
-	public void benchmark(boolean logEveryRun, String measure, int runTimes, boolean skipLog) throws Exception {
+	/**
+	 * Benchmark recommendation logic cache 
+	 * This benchmark tests 4 different scenarios
+	 * 1. Fetch recommendations for a single user without cache
+	 * 2. Fetch recommendations for a single user with cache
+	 * 3. Fetch recommendations for unique random users without cache
+	 * 4. Fetch recommendations for the same random users as 3. with cache (one user may cache results for other users), starting from empty cache
+	 * Test 1 and 2 can be run many times set with the param singleUserTestRuns and will be summarized to one result.
+	 * 
+	 * @param logEveryRun if every run should be printed to console
+	 * @param measure what similarity measure to use for benchmark
+	 * @param runTimes how many times should we fetch recommendations in 1. and 2. 
+	 * @param skipLog skipLog if this is a warmup run, the first run usually have a higher result
+	 * @param singleUserTestRuns how many times the single user test should be tested (a new user per test)
+	 * @param uniqueRandomUsers how many user to test with for 3. and 4.
+	 * @throws Exception
+	 */
+	public void benchmark(boolean logEveryRun, String measure, int runTimes, boolean skipLog, int singleUserTestRuns, int uniqueRandomUsers) throws Exception {
 		//runTimes = 10;
-		clearUserCaches();
-		UserEntity user = getRandomUser();
-		BenchmarkRun emptyCacheBCR = new BenchmarkRun("Benchmark empty cache times same user");
-		//1. Fetch some recommendation for user random user 100 ten times, clear cache everytime
-		for(int i = 0; i < runTimes; i++) {
-			long startTime = System.currentTimeMillis();//for metadata
-			recLogic.userRec(user, measure, 10, 5);
-			long recommendationTime = (System.currentTimeMillis() - startTime);//for metadata
-			emptyCacheBCR.addRun(recommendationTime);
-			emptyCacheBCR.addUserRatingCount(user.getRatedMovies().size());
-			emptyCacheBCR.addSimilarUsersCount(user.getSortedCache(measure).size());
-			clearUserCaches();
-		}
-		if(logEveryRun)
-			System.out.println(emptyCacheBCR.toString(false));
+		System.out.println("Starting benchmark on: " + measure + (skipLog ? " WAMRUP" : ""));
 		
-
-		clearUserCaches();
-		//Do the same as above, but dont clear cache and exclude the first result (since it doesnt benefit from cache)
-		BenchmarkRun cacheBCR = new BenchmarkRun("Benchmark full cache times same user");
-		for(int i = 0; i < runTimes; i++) {
-			long startTime = System.currentTimeMillis();//for metadata
-			recLogic.userRec(user, measure, 10, 5);
-			long recommendationTime = (System.currentTimeMillis() - startTime);//for metadata
-			if(i > 0) {
-				cacheBCR.addRun(recommendationTime);
-				cacheBCR.addUserRatingCount(user.getRatedMovies().size());
-				cacheBCR.addSimilarUsersCount(user.getSortedCache(measure).size());
+		//lets run the same user test a number of times to make sure the cache isn't just faster for the single randomized user
+		System.out.print("\nTest 1 and 2 started and will run " + singleUserTestRuns + " times:");
+		ArrayList<BenchmarkRun> sameUserRunsCache = new ArrayList<>();
+		ArrayList<BenchmarkRun> sameUserRunsNoCache = new ArrayList<>();
+		ArrayList<UserEntity> testedUsers = new ArrayList<>();
+		for(int singleUserTest = 0; singleUserTest < singleUserTestRuns; singleUserTest++) {
+			System.out.print(" " + (singleUserTest+1) + "/" + singleUserTestRuns + "... ");
+			clearUserCaches();
+			UserEntity user = getRandomUser();
+			while(testedUsers.contains(user)) { 
+				//make sure we dont get the same user
+				user = getRandomUser();
 			}
+			BenchmarkRun emptyCacheBCR = new BenchmarkRun("Benchmark empty cache times same user");
+			sameUserRunsNoCache.add(emptyCacheBCR);
+			for(int i = 0; i < runTimes; i++) {
+				long startTime = System.currentTimeMillis();
+				recLogic.userRec(user, measure, 10, 5);
+				long recommendationTime = (System.currentTimeMillis() - startTime);
+				emptyCacheBCR.addRun(recommendationTime);
+				emptyCacheBCR.addUserRatingCount(user.getRatedMovies().size());
+				emptyCacheBCR.addSimilarUsersCount(user.getSortedCache(measure).size());
+				clearUserCaches();
+			}
+			if(logEveryRun)
+				System.out.println(emptyCacheBCR.toString(false));
+	
+			clearUserCaches();
+			BenchmarkRun cacheBCR = new BenchmarkRun("Benchmark full cache times same user");
+			sameUserRunsCache.add(cacheBCR);
+			for(int i = 0; i < runTimes; i++) {
+				long startTime = System.currentTimeMillis();
+				recLogic.userRec(user, measure, 10, 5);
+				long recommendationTime = (System.currentTimeMillis() - startTime);
+				if(i > 0) {
+					cacheBCR.addRun(recommendationTime);
+					cacheBCR.addUserRatingCount(user.getRatedMovies().size());
+					cacheBCR.addSimilarUsersCount(user.getSortedCache(measure).size());
+				}
+			}
+			if(logEveryRun)
+				System.out.println(cacheBCR.toString(false));
 		}
-		if(logEveryRun)
-			System.out.println(cacheBCR.toString(false));
-
+		//we have run the same user test a number of times now, lets summarize those runs
+		BenchmarkRun noCacheBCR = new BenchmarkRun("Benchmark no cache times runned " + runTimes + " for " + singleUserTestRuns + " users");
+		BenchmarkRun cacheBCR = new BenchmarkRun("Benchmark full cache times runned " + runTimes + " for " + singleUserTestRuns + " users");
+		double totalTime = 0;
+		int totalRatings = 0, totalSimUsers = 0;
+		for(BenchmarkRun run : sameUserRunsCache) {
+			totalTime += run.getMeanTime();
+			totalRatings += run.getUserRatingCountMean();
+			totalSimUsers += run.getSimilarUserCountMean();
+		}
+		cacheBCR.addRun(totalTime/singleUserTestRuns);
+		cacheBCR.addSimilarUsersCount(totalSimUsers/singleUserTestRuns);
+		cacheBCR.addUserRatingCount(totalRatings/singleUserTestRuns);
+		
+		totalTime = 0;
+		totalRatings = 0; 
+		totalSimUsers = 0;
+		for(BenchmarkRun run : sameUserRunsNoCache) {
+			totalTime += run.getMeanTime();
+			totalRatings += run.getUserRatingCountMean();
+			totalSimUsers += run.getSimilarUserCountMean();
+		}
+		noCacheBCR.addRun(totalTime/singleUserTestRuns);
+		noCacheBCR.addSimilarUsersCount(totalSimUsers/singleUserTestRuns);
+		noCacheBCR.addUserRatingCount(totalRatings/singleUserTestRuns);
+		
+		//Test random users with cache and without cache.. See if there is a benefit for other users that some users cached results
+		System.out.println("\nTest 3 started");
+		ArrayList<UserEntity> randomUsers = new ArrayList<>();
 		clearUserCaches();
-		//Do the same as above, but dont clear cache and exclude the first result (since it doesnt benefit from cache)
 		BenchmarkRun noCacheRandomUsersBCR = new BenchmarkRun("Benchmark no cache times random users");
-		for(int i = 0; i < runTimes; i++) {
+		for(int i = 0; i < uniqueRandomUsers; i++) {
 			UserEntity randomUser = getRandomUser();
-			long startTime = System.currentTimeMillis();//for metadata
+			while(randomUsers.contains(randomUser)) { 
+				//make sure we dont get the same user
+				randomUser = getRandomUser();
+			}
+			randomUsers.add(randomUser);
+			long startTime = System.currentTimeMillis();
 			recLogic.userRec(randomUser, measure, 10, 5);
-			long recommendationTime = (System.currentTimeMillis() - startTime);//for metadata
+			long recommendationTime = (System.currentTimeMillis() - startTime);
 			noCacheRandomUsersBCR.addUserRatingCount(randomUser.getRatedMovies().size());
 			noCacheRandomUsersBCR.addRun(recommendationTime);
 			noCacheRandomUsersBCR.addSimilarUsersCount(randomUser.getSortedCache(measure).size());
@@ -66,54 +128,52 @@ public class CacheBenchmark {
 		}
 		if(logEveryRun)
 			System.out.println(noCacheRandomUsersBCR.toString(false));
-	
+
+		System.out.println("Test 4 started");
 		clearUserCaches();
-		//Do the same as above, but dont clear cache and exclude the first result (since it doesnt benefit from cache)
 		BenchmarkRun cacheRandomUsersBCR = new BenchmarkRun("Benchmark full cache times random users");
-		for(int i = 0; i < runTimes; i++) {
-			UserEntity randomUser = getRandomUser();
-			long startTime = System.currentTimeMillis();//for metadata
-			recLogic.userRec(randomUser, measure, 10, 5);
-			long recommendationTime = (System.currentTimeMillis() - startTime);//for metadata
-			if(i > 0) {
-				cacheRandomUsersBCR.addRun(recommendationTime);
-				cacheRandomUsersBCR.addUserRatingCount(randomUser.getRatedMovies().size());
-				cacheRandomUsersBCR.addSimilarUsersCount(randomUser.getSortedCache(measure).size());
-			}
+		
+		for(UserEntity thisRandomUser : randomUsers) {
+			long startTime = System.currentTimeMillis();
+			recLogic.userRec(thisRandomUser, measure, 10, 5);
+			long recommendationTime = (System.currentTimeMillis() - startTime);
+			cacheRandomUsersBCR.addRun(recommendationTime);
+			cacheRandomUsersBCR.addUserRatingCount(thisRandomUser.getRatedMovies().size());
+			cacheRandomUsersBCR.addSimilarUsersCount(thisRandomUser.getSortedCache(measure).size());
 		}
 		if(logEveryRun)
 			System.out.println(cacheRandomUsersBCR.toString(false));
 		
-		clearUserCaches();
-		BenchmarkRun emptyCacheBCR2 = new BenchmarkRun("Benchmark empty cache times same user, same as first test case but run in end to see if the first is just bad because its \"warming up\"");
-		//1. Fetch some recommendation for user random user 100 ten times, clear cache everytime
-		for(int i = 0; i < runTimes; i++) {
-			long startTime = System.currentTimeMillis();//for metadata
-			recLogic.userRec(user, measure, 10, 5);
-			long recommendationTime = (System.currentTimeMillis() - startTime);//for metadata
-			emptyCacheBCR2.addRun(recommendationTime);
-			emptyCacheBCR2.addUserRatingCount(user.getRatedMovies().size());
-			emptyCacheBCR2.addSimilarUsersCount(user.getSortedCache(measure).size());
-			clearUserCaches();
-		}
-		if(logEveryRun)
-			System.out.println(emptyCacheBCR2.toString(false));
 		if(!skipLog) {
 			System.out.println("");
-			System.out.println("###########################################################################################");
-			System.out.println("# RESULT FROM BENCHMARK                                                                   #");
-			System.out.println("# Measure: "+measure+" ("+runTimes+" runs)\t\t\t                                          #");
-			System.out.println("# --------------------------------------------------------------------------------------- #");
-			System.out.println("# | Type \t\t\t| Similar users \t| Ratings \t| Mean time \t| #");
-			System.out.println("# --------------------------------------------------------------------------------------- #");
-			System.out.println("# | Same user no cache   \t| "+emptyCacheBCR.getSimilarUserCountMean()+" \t\t\t| "+emptyCacheBCR.getUserRatingCountMean()+" \t\t| "+emptyCacheBCR.getMeanTime()+"\t| #");
-			System.out.println("# | Same user with cache \t| "+cacheBCR.getSimilarUserCountMean()+" \t\t\t| "+cacheBCR.getUserRatingCountMean()+" \t\t| "+cacheBCR.getMeanTime()+"\t| #");
-			System.out.println("# | Random users no cache \t| "+noCacheRandomUsersBCR.getSimilarUserCountMean()+" \t\t\t| "+noCacheRandomUsersBCR.getUserRatingCountMean()+" \t\t| "+noCacheRandomUsersBCR.getMeanTime()+"\t| #");
-			System.out.println("# | Random users with cache \t| "+cacheRandomUsersBCR.getSimilarUserCountMean()+" \t\t\t| "+cacheRandomUsersBCR.getUserRatingCountMean()+" \t\t| "+cacheRandomUsersBCR.getMeanTime()+"\t| #");
-			System.out.println("# | Same as first just again \t| "+emptyCacheBCR2.getSimilarUserCountMean()+" \t\t\t| "+emptyCacheBCR2.getUserRatingCountMean()+" \t\t| "+emptyCacheBCR2.getMeanTime()+"\t| #");
-			System.out.println("# --------------------------------------------------------------------------------------- #");
-			System.out.println("###########################################################################################");
+			System.out.println("###################################################################################################");
+			System.out.println("# RESULT FROM BENCHMARK                                                                    	  #");
+			System.out.println("# Measure: "+measure+" ("+runTimes+" runs)\t\t\t                                           	  #");
+			System.out.println("# ----------------------------------------------------------------------------------------------- #");
+			System.out.println("# | Type \t\t\t\t| Similar users \t| Ratings \t| Mean time \t| #");
+			System.out.println("# ----------------------------------------------------------------------------------------------- #");
+			System.out.println("# | Same user no cache ("+singleUserTestRuns+" runs)  \t| "+noCacheBCR.getSimilarUserCountMean()+" \t\t\t| "+noCacheBCR.getUserRatingCountMean()+" \t\t| "+noCacheBCR.getMeanTimeString()+"\t| #");
+			System.out.println("# | Same user with cache ("+singleUserTestRuns+" runs) \t| "+cacheBCR.getSimilarUserCountMean()+" \t\t\t| "+cacheBCR.getUserRatingCountMean()+" \t\t| "+cacheBCR.getMeanTimeString()+"\t| #");
+			System.out.println("# | Random users no cache \t\t| "+noCacheRandomUsersBCR.getSimilarUserCountMean()+" \t\t\t| "+noCacheRandomUsersBCR.getUserRatingCountMean()+" \t\t| "+noCacheRandomUsersBCR.getMeanTimeString()+"\t| #");
+			System.out.println("# | Random users with cache \t\t| "+cacheRandomUsersBCR.getSimilarUserCountMean()+" \t\t\t| "+cacheRandomUsersBCR.getUserRatingCountMean()+" \t\t| "+cacheRandomUsersBCR.getMeanTimeString()+"\t| #");
+			System.out.println("# ----------------------------------------------------------------------------------------------- #");
+			System.out.println("# SUMMARY:                                                                                 	  #");	
+			System.out.println("# Is cache faster for the same user: "+isCacheFaster(cacheBCR, noCacheBCR)+" \t\t\t\t\t  #");			
+			System.out.println("# Is cache faster for random users: "+isCacheFaster(cacheRandomUsersBCR, noCacheRandomUsersBCR)+" \t\t\t\t\t\t  #");
+			System.out.println("###################################################################################################");
 			System.out.println("");
+		}
+	}
+	
+	public String isCacheFaster(BenchmarkRun cache, BenchmarkRun notCache) {
+		DecimalFormat df = new DecimalFormat("#.00"); 
+		if(cache.getMeanTime() < notCache.getMeanTime()) {
+			//cache is faster
+			return "TRUE " + df.format((notCache.getMeanTime() / cache.getMeanTime()-1)*100) + "% faster";
+		}else if(cache.getMeanTime() == notCache.getMeanTime()){
+			return "Cache == no cache";
+		}  else {
+			return "FALSE " + df.format((notCache.getMeanTime() / cache.getMeanTime()-1)*100) + "% slower";
 		}
 	}
 	
@@ -163,7 +223,6 @@ public class CacheBenchmark {
 			return times;
 		}
 
-		
 		public void addUserRatingCount(Integer ratings) {
 			this.userRatingCount.add(ratings);
 		}
@@ -192,13 +251,22 @@ public class CacheBenchmark {
 			return total/userRatingCount.size();
 		}
 		
-		public String getMeanTime() {
+		public String getMeanTimeString() {
 			double total = 0;
 			for(Double runTime : times) {
 				total += runTime;
 			}
 			DecimalFormat df = new DecimalFormat("#.00"); 
 			return df.format(total/times.size()) + "ms";
+		}
+		
+		public double getMeanTime() {
+			double total = 0;
+			for(Double runTime : times) {
+				total += runTime;
+			}
+			DecimalFormat df = new DecimalFormat("#.00"); 
+			return total/times.size();
 		}
 		
 		public String toString(boolean showEachRun) {
