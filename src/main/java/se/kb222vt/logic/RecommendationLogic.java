@@ -90,10 +90,14 @@ public class RecommendationLogic {
 	 */
 	private SortedMap<Double, UserEntity> findSimilarUsers(UserEntity user, String measure) throws Exception {
 		SortedMap<Double, UserEntity> similarUsers = new TreeMap<Double, UserEntity>().descendingMap();
+		measure = measure.toLowerCase();
+		if(user.getCacheSize(measure) == Application.getUsers().size()) {
+			//all similarities for this measure and user are already cached, just return
+			return user.getSortedCache(measure);
+		}
 		for(UserEntity u : Application.getUsers().values()) {
 			if(u.equals(user))
 				continue;
-			measure = measure.toLowerCase();
 			double similarity = user.getSimilarityFromCache(u.getUserID(), measure);
 			//check and see if the users similarity for this measure is in cache
 			if(similarity == -1) {

@@ -67,7 +67,10 @@ public class Application implements SparkApplication {
         
         CacheBenchmark cbr = new CacheBenchmark();
         try {
-			cbr.benchmark();
+			cbr.benchmark(false);
+			cbr.benchmark(false);
+			cbr.benchmark(false);
+			cbr.benchmark(false);
 		} catch (Exception e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();

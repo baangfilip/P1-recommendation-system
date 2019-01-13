@@ -1,6 +1,12 @@
 package se.kb222vt.entities;
 
 import java.util.HashMap;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
+
+import se.kb222vt.app.Application;
 
 public class UserEntity {
 	private String userName = "";
@@ -91,6 +97,20 @@ public class UserEntity {
 	 */
 	public void clearCache() {
 		this.similarityUserCache = new HashMap<>();
+	}
+	
+	/**
+	 * Converts the cache to a SortedMap
+	 * @param measure which cache to fetch
+	 * @return
+	 */
+	public SortedMap<Double, UserEntity> getSortedCache(String measure){
+		HashMap<Integer, Double> similarityCache = similarityUserCache.get(measure);
+		SortedMap<Double, UserEntity> similarUsers = new TreeMap<Double, UserEntity>().descendingMap();
+		for(Entry<Integer, Double> similarity : similarityCache.entrySet()) {
+			similarUsers.put(similarity.getValue(), Application.getUsers().get(similarity.getKey()));
+		}
+		return similarUsers;
 	}
 	
 }
