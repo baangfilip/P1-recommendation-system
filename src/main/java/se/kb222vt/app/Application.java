@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.apache.commons.csv.CSVFormat;
@@ -65,21 +66,7 @@ public class Application implements SparkApplication {
 			e.printStackTrace();
 		}
         
-        CacheBenchmark cbr = new CacheBenchmark();
-        try {
-        	int runs = 20;
-        	int singleTestUsers = 20;
-        	int uniqueRandomUsers = 250;
-        	
-			cbr.benchmark(false, "euclidean", 5, true, 1, 0);//warmup run
-			cbr.benchmark(false, "euclidean", runs, false, singleTestUsers, uniqueRandomUsers);
-			
-			cbr.benchmark(false, "pearson", 5, true, 1, 0);//warmup run
-			cbr.benchmark(false, "pearson", runs, false, singleTestUsers, uniqueRandomUsers);
-		} catch (Exception e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
+        runBenchmarks();
 	}
 	
 	private void initUsers() throws IOException {
@@ -130,6 +117,23 @@ public class Application implements SparkApplication {
 	}
 	public void setMoviesCSV(String path) {
 		this.moviesCSV = path;
+	}
+	
+	public void runBenchmarks() {
+		CacheBenchmark cbr = new CacheBenchmark();
+        try {
+        	int runs = 20;
+        	ArrayList<UserEntity> randomSingleTestUsers = cbr.getUsers(20);
+        	ArrayList<UserEntity> testUsersFor3and4 = cbr.getUsers(305);
+        	
+			cbr.benchmark(false, "euclidean", 5, true, cbr.getUsers(1), cbr.getUsers(1));//warmup run
+			cbr.benchmark(false, "euclidean", runs, false, randomSingleTestUsers, testUsersFor3and4);
+			cbr.benchmark(false, "pearson", 5, true, cbr.getUsers(1), cbr.getUsers(1));//warmup run
+			cbr.benchmark(false, "pearson", runs, false, randomSingleTestUsers, testUsersFor3and4);
+		} catch (Exception e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 	}
 	
 }
