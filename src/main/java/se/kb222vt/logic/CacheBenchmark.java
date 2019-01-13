@@ -38,12 +38,12 @@ public class CacheBenchmark {
 		System.out.println("Starting benchmark on: " + measure + (skipLog ? " WAMRUP" : ""));
 		
 		//lets run the same user test a number of times to make sure the cache isn't just faster for the single randomized user
-		System.out.print("\nTest 1 and 2 started and will run " + singleUserTestRuns + " times:");
+		System.out.print("\nTest 1 and 2 started and will run for" + singleUserTestRuns + " users:");
 		ArrayList<BenchmarkRun> sameUserRunsCache = new ArrayList<>();
 		ArrayList<BenchmarkRun> sameUserRunsNoCache = new ArrayList<>();
 		ArrayList<UserEntity> testedUsers = new ArrayList<>();
 		for(int singleUserTest = 0; singleUserTest < singleUserTestRuns; singleUserTest++) {
-			System.out.print(" " + (singleUserTest+1) + "/" + singleUserTestRuns + "... ");
+			System.out.print(" " + (singleUserTest+1) + "..");
 			clearUserCaches();
 			UserEntity user = getRandomUser();
 			while(testedUsers.contains(user)) { 
@@ -148,14 +148,14 @@ public class CacheBenchmark {
 			System.out.println("");
 			System.out.println("###################################################################################################");
 			System.out.println("# RESULT FROM BENCHMARK                                                                    	  #");
-			System.out.println("# Measure: "+measure+" ("+runTimes+" runs)\t\t\t                                           	  #");
+			System.out.println("# Measure: "+measure+" \t                                          	                          #");
 			System.out.println("# ----------------------------------------------------------------------------------------------- #");
 			System.out.println("# | Type \t\t\t\t| Similar users \t| Ratings \t| Mean time \t| #");
 			System.out.println("# ----------------------------------------------------------------------------------------------- #");
 			System.out.println("# | Same user no cache ("+singleUserTestRuns+" runs)  \t| "+noCacheBCR.getSimilarUserCountMean()+" \t\t\t| "+noCacheBCR.getUserRatingCountMean()+" \t\t| "+noCacheBCR.getMeanTimeString()+"\t| #");
 			System.out.println("# | Same user with cache ("+singleUserTestRuns+" runs) \t| "+cacheBCR.getSimilarUserCountMean()+" \t\t\t| "+cacheBCR.getUserRatingCountMean()+" \t\t| "+cacheBCR.getMeanTimeString()+"\t| #");
-			System.out.println("# | Random users no cache \t\t| "+noCacheRandomUsersBCR.getSimilarUserCountMean()+" \t\t\t| "+noCacheRandomUsersBCR.getUserRatingCountMean()+" \t\t| "+noCacheRandomUsersBCR.getMeanTimeString()+"\t| #");
-			System.out.println("# | Random users with cache \t\t| "+cacheRandomUsersBCR.getSimilarUserCountMean()+" \t\t\t| "+cacheRandomUsersBCR.getUserRatingCountMean()+" \t\t| "+cacheRandomUsersBCR.getMeanTimeString()+"\t| #");
+			System.out.println("# | Random users no cache ("+uniqueRandomUsers+" users) \t| "+noCacheRandomUsersBCR.getSimilarUserCountMean()+" \t\t\t| "+noCacheRandomUsersBCR.getUserRatingCountMean()+" \t\t| "+noCacheRandomUsersBCR.getMeanTimeString()+"\t| #");
+			System.out.println("# | Random users with cache ("+uniqueRandomUsers+" users) | "+cacheRandomUsersBCR.getSimilarUserCountMean()+" \t\t\t| "+cacheRandomUsersBCR.getUserRatingCountMean()+" \t\t| "+cacheRandomUsersBCR.getMeanTimeString()+"\t| #");
 			System.out.println("# ----------------------------------------------------------------------------------------------- #");
 			System.out.println("# SUMMARY:                                                                                 	  #");	
 			System.out.println("# Is cache faster for the same user: "+isCacheFaster(cacheBCR, noCacheBCR)+" \t\t\t\t\t  #");			
