@@ -47,13 +47,6 @@ public class Application implements SparkApplication {
         	return gson.toJson(movies);
         });
         
-        /*
-            TODO:
-        	Grade A-B
-        	Measure the time it takes to find top 5 recommended movies for a user (try for example user 256)
-			Build a cache for similarity calculations to avoid calculating similarity between two users more than once
-			How much does the cache improve execution times when finding top 5 recommended movies?
-        */
         try {
         	System.out.println("Load movies");
 	        initMovies();
@@ -119,6 +112,10 @@ public class Application implements SparkApplication {
 		this.moviesCSV = path;
 	}
 	
+	/**
+	 * Run benchmarks for this application
+	 * Right now there is benchmarks for: Caching similarities
+	 */
 	public void runBenchmarks() {
 		CacheBenchmark cbr = new CacheBenchmark();
         try {
@@ -130,9 +127,8 @@ public class Application implements SparkApplication {
 			cbr.benchmark(false, "euclidean", runs, false, randomSingleTestUsers, testUsersFor3and4);
 			cbr.benchmark(false, "pearson", 5, true, cbr.getUsers(1), cbr.getUsers(1));//warmup run
 			cbr.benchmark(false, "pearson", runs, false, randomSingleTestUsers, testUsersFor3and4);
-		} catch (Exception e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 	

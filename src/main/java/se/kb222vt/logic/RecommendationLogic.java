@@ -83,6 +83,8 @@ public class RecommendationLogic {
 	
 	/**
 	 * Find similar users by calculating pearson or using euclidean distance between other users that have watched the same movies
+	 * Will look in the users cache to see if the similarity already have been calculated, if it has, it will just return that similarity. 
+	 * Otherwise it will calculate the similarity and cache it.
 	 * @param user find similar users to user
 	 * @param measure use pearson or euclidean
 	 * @return a SortedMap with users sorted descending, the most similar user first
@@ -221,7 +223,13 @@ public class RecommendationLogic {
 		return unwatchedMovies;
 	}	
 	
-	
+	/**
+	 * Cache similarity between users
+	 * @param measure which similarity measure has been used 
+	 * @param similarity the similarity
+	 * @param u1 one of the users for this similarity
+	 * @param u2 the other users for this similarity
+	 */
 	private void cacheSimilarity(String measure, double similarity, UserEntity u1, UserEntity u2) {
 		u1.addSimilarityToCache(measure, similarity, u2.getUserID());
 		u2.addSimilarityToCache(measure, similarity, u1.getUserID());

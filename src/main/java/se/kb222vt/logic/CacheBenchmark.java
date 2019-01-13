@@ -17,24 +17,25 @@ public class CacheBenchmark {
 	private RecommendationLogic recLogic = new RecommendationLogic();
 	
 	/**
-	 * Benchmark recommendation logic cache 
+	 * Benchmark the cache in recommendation logic  
 	 * This benchmark tests 4 different scenarios
-	 * 1. Fetch recommendations for a single user without cache
-	 * 2. Fetch recommendations for a single user with cache
-	 * 3. Fetch recommendations for unique random users without cache
-	 * 4. Fetch recommendations for the same random users as 3. with cache (one user may cache results for other users), starting from empty cache
-	 * Test 1 and 2 can be run many times set with the param singleUserTestRuns and will be summarized to one result.
+	 * 1. Fetch recommendations for users without cache
+	 * 2. Fetch recommendations for the same users as 1. with cache
+	 * 3. Fetch recommendations for larger amount of users without cache
+	 * 4. Fetch recommendations for the same users as 3. with cache (one user may cache results for other users), starting from empty cache
+	 * Test 1 and 2 is different from 3 and 4 in that 1 and 2 fetches recommendations for the same user many times. Test 3 and 4 tests how other users benefit from previous users caching.
+	 * 
+	 * The function prints progress of the benchmark and the result in a table in the console
 	 * 
 	 * @param logEveryRun if every run should be printed to console
 	 * @param measure what similarity measure to use for benchmark
 	 * @param runTimes how many times should we fetch recommendations in 1. and 2. 
-	 * @param skipLog skipLog if this is a warmup run, the first run usually have a higher result
+	 * @param skipLog skipLog if this is a warmup run, the most first run usually have a higher result
 	 * @param singleUsers a list of users to test case 1 and 2 on
-	 * @param bulkUsers a list of users to test with for 3. and 4.
+	 * @param bulkUsers a list of users to test with for 3 and 4
 	 * @throws Exception
 	 */
 	public void benchmark(boolean logEveryRun, String measure, int runTimes, boolean skipLog, ArrayList<UserEntity> singleUsers, ArrayList<UserEntity> bulkUsers) throws Exception {
-		//runTimes = 10;
 		System.out.println("Starting benchmark on: " + measure + (skipLog ? " WAMRUP" : ""));
 		
 		//lets run the same user test a number of times to make sure the cache isn't just faster for the single randomized user
@@ -150,8 +151,16 @@ public class CacheBenchmark {
 			System.out.println("###################################################################################################");
 			System.out.println("");
 		}
+
+		clearUserCaches();
 	}
 	
+	/**
+	 * Get a string describing if one run is faster then the other
+	 * @param cache the BenchmarkRun that has cache
+	 * @param notCache the BenchmarkRun that doesn't have cache
+	 * @return
+	 */
 	public String isCacheFaster(BenchmarkRun cache, BenchmarkRun notCache) {
 		DecimalFormat df = new DecimalFormat("#.00"); 
 		if(cache.getMeanTime() < notCache.getMeanTime()) {
@@ -165,7 +174,7 @@ public class CacheBenchmark {
 	}
 	
 	/**
-	 * Get random user
+	 * Get a random user
 	 * Not dependent on structure of hashmap or userid's
 	 * @return a random user from the applications user list, null if something is wrong
 	 */
@@ -184,10 +193,10 @@ public class CacheBenchmark {
 	}
 	
 	/**
-	 * Get random number of users.
+	 * Get number of random users.
 	 * If nbrOfUsers to get is more then 50% of the systems total users it will get users that are in a range rather then randomizing.
 	 * @param nbrOfUsers
-	 * @return
+	 * @return a list of users
 	 * @throws Exception 
 	 */
 	public ArrayList<UserEntity> getUsers(int nbrOfUsers) throws Exception{
@@ -235,7 +244,7 @@ public class CacheBenchmark {
 	}
 	
 	/**
-	 * Container for a run in the benchmark
+	 * Results for a run in the benchmark
 	 * @author Baangfilip
 	 */
 	class BenchmarkRun {
