@@ -100,7 +100,7 @@ public class UserEntity {
 	}
 	
 	/**
-	 * Converts the cache to a SortedMap
+	 * Converts the cache to a SortedMap with only similarities above 0
 	 * @param measure which cache to fetch
 	 * @return
 	 */
@@ -108,7 +108,8 @@ public class UserEntity {
 		HashMap<Integer, Double> similarityCache = similarityUserCache.get(measure);
 		SortedMap<Double, UserEntity> similarUsers = new TreeMap<Double, UserEntity>().descendingMap();
 		for(Entry<Integer, Double> similarity : similarityCache.entrySet()) {
-			similarUsers.put(similarity.getValue(), Application.getUsers().get(similarity.getKey()));
+			if(similarity.getValue() > 0)
+				similarUsers.put(similarity.getValue(), Application.getUsers().get(similarity.getKey()));
 		}
 		return similarUsers;
 	}

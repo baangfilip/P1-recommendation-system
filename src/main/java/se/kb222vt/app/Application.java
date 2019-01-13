@@ -67,10 +67,15 @@ public class Application implements SparkApplication {
         
         CacheBenchmark cbr = new CacheBenchmark();
         try {
-			cbr.benchmark(false);
-			cbr.benchmark(false);
-			cbr.benchmark(false);
-			cbr.benchmark(false);
+        	int runs = 500;
+			cbr.benchmark(false, "euclidean", runs, true);
+			cbr.benchmark(false, "euclidean", runs, false);
+			cbr.benchmark(false, "euclidean", runs, false);
+			cbr.benchmark(false, "euclidean", runs, false);
+			cbr.benchmark(false, "pearson", runs, true);
+			cbr.benchmark(false, "pearson", runs, false);
+			cbr.benchmark(false, "pearson", runs, false);
+			cbr.benchmark(false, "pearson", runs, false);
 		} catch (Exception e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
